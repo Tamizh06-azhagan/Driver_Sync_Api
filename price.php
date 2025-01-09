@@ -22,32 +22,54 @@ if (empty($origin) || empty($destination) || $days <= 0) {
     exit();
 }
 
-// Example: Fetch price details from the database (assume a `price_details` table exists)
-$query = "SELECT price_per_day FROM pricepage WHERE origin = ? AND destination = ?";
-$stmt = $conn->prepare($query);
-$stmt->bind_param("ss", $origin, $destination);
-$stmt->execute();
-$result = $stmt->get_result();
+// Function to fetch price per day
+function getPricePerDay($conn, $origin, $destination) {
+    $query = "SELECT price_per_day FROM pricepage WHERE origin = ? AND destination = ?";
+    $stmt = $conn->prepare($query);
+    $stmt->bind_param("ss", $origin, $destination);
+    $stmt->execute();
+    $result = $stmt->get_result();
 
-if ($result->num_rows > 0) {
-    $row = $result->fetch_assoc();
-    $price_per_day = $row['price_per_day'];
-    $total_amount = $price_per_day * $days;
+    if ($result->num_rows > 0) {
+        $row = $result->fetch_assoc();
+        return $row['price_per_day'];
+    }
 
-    echo json_encode([
-        'status' => true,
-        'message' => 'Price calculated successfully.',
-        'origin' => $origin,
-        'destination' => $destination,
-        'days' => $days,
-        'price_per_day' => $price_per_day,
-        'total_amount' => $total_amount
-    ]);
-} else {
-    echo json_encode(['status' => false, 'message' => 'No price details found for the selected route.']);
+    return null;
 }
 
-// Close the statement and connection
-$stmt->close();
+// Try fetching price for the provided route
+$price_per_day = getPricePerDay($conn, $origin, $destination);
+
+if ($price_per_day === null) {
+    // Swap origin and destination
+    $temp = $origin;
+    $origin = $destination;
+    $destination = $temp;
+
+    // Try fetching price for the swapped route
+    $price_per_day = getPricePerDay($conn, $origin, $destination);
+
+    if ($price_per_day === null) {
+        echo json_encode(['status' => false, 'message' => 'No price details found for the selected route or its reverse.']);
+        exit();
+    }
+}
+
+// Calculate the total amount for the route (original or swapped)
+$total_amount = $price_per_day * $days;
+
+// Return the response
+echo json_encode([
+    'status' => true,
+    'message' => 'Price calculated successfully.',
+    'origin' => $origin,
+    'destination' => $destination,
+    'days' => $days,
+    'price_per_day' => $price_per_day,
+    'total_amount' => $total_amount
+]);
+
+// Close the connection
 $conn->close();
 ?>
