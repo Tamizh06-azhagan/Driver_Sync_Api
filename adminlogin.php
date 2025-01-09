@@ -37,6 +37,7 @@ if (isset($requestData['username']) && isset($requestData['password'])) {
     $response = [
         'status' => false,
         'message' => 'Please provide both username and password.'
+        
     ];
 }
 

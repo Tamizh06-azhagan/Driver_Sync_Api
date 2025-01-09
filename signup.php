@@ -18,7 +18,7 @@ if ($_SERVER['REQUEST_METHOD'] != 'POST') {
 $data = json_decode(file_get_contents("php://input"));
 
 // Validate if all necessary fields are provided
-if (!isset($data->name) || !isset($data->username) || !isset($data->email) || !isset($data->password)) {
+if (!isset($data->name) || !isset($data->username) || !isset($data->email) || !isset($data->password) || !isset($data->role)) {
     echo json_encode([
         'status' => false, 
         'message' => 'Missing required fields'
@@ -31,6 +31,7 @@ $name = htmlspecialchars(strip_tags($data->name));
 $username = htmlspecialchars(strip_tags($data->username));
 $email = htmlspecialchars(strip_tags($data->email));
 $password = htmlspecialchars(strip_tags($data->password));
+$role = htmlspecialchars(strip_tags($data->role));
 
 // Validate email format
 if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
@@ -41,17 +42,18 @@ if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
     exit();
 }
 
-// // Check password strength (simple rule: at least 8 characters, one number, one uppercase letter, one lowercase letter)
-// if (!preg_match("/^(?=.[a-z])(?=.[A-Z])(?=.*\d).{8,}$/", $password)) {
-//     echo json_encode([
-//         'status' => false, 
-//         'message' => 'Password must be at least 8 characters long, contain at least one number, one uppercase letter, and one lowercase letter'
-//     ]);
-//     exit();
-// }
+// Optionally validate the role (e.g., allow only specific roles like 'admin', 'user')
+$allowed_roles = ['User','Driver']; // Define allowed roles
+if (!in_array($role, $allowed_roles)) {
+    echo json_encode([
+        'status' => false, 
+        'message' => 'Invalid role. Allowed roles are admin and user.'
+    ]);
+    exit();
+}
 
 // Check if username or email already exists in the database
-$query = "SELECT id FROM users WHERE username = ? OR email = ?";
+$query = "SELECT id FROM signup WHERE username = ? OR email = ?";
 $stmt = $conn->prepare($query);
 $stmt->bind_param("ss", $username, $email);
 $stmt->execute();
@@ -62,16 +64,15 @@ if ($stmt->num_rows > 0) {
         'status' => false, 
         'message' => 'Username or email already exists'
     ]);
+    $stmt->close();
+    $conn->close();
     exit();
 }
 
-// Hash the password before storing it
-// $hashed_password = password_hash($password, PASSWORD_DEFAULT);
-
 // Insert the new user into the database
-$query = "INSERT INTO users (name, username, email, password) VALUES (?, ?, ?, ?)";
+$query = "INSERT INTO signup (`name`, `username`, `email`, `password`, `role`) VALUES (?, ?, ?, ?, ?)";
 $stmt = $conn->prepare($query);
-$stmt->bind_param("ssss", $name, $username, $email, $password);
+$stmt->bind_param("sssss", $name, $username, $email, $password, $role);
 
 if ($stmt->execute()) {
     echo json_encode([
