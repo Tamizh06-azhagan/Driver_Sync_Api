@@ -8,7 +8,7 @@ header('Content-Type: application/json');
 // Check if the request method is POST
 if ($_SERVER['REQUEST_METHOD'] != 'POST') {
     echo json_encode([
-        'status' => false, 
+        'status' => false,
         'message' => 'Invalid request method. Please use POST.'
     ]);
     exit();
@@ -20,17 +20,12 @@ if (!is_dir($upload_dir)) {
     mkdir($upload_dir, 0777, true); // Create the directory with write permissions
 }
 
-// Debugging block: Uncomment to inspect incoming data
-// var_dump($_POST);
-// var_dump($_FILES);
-// exit();
-
 // Validate required fields
 if (!isset($_POST['name']) || !isset($_POST['username']) || !isset($_POST['email']) ||
     !isset($_POST['password']) || !isset($_POST['role']) || !isset($_POST['contact_number']) || 
     !isset($_FILES['image'])) {
     echo json_encode([
-        'status' => false, 
+        'status' => false,
         'message' => 'Missing required fields'
     ]);
     exit();
@@ -47,7 +42,7 @@ $contact_number = htmlspecialchars(strip_tags($_POST['contact_number']));
 // Validate email format
 if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
     echo json_encode([
-        'status' => false, 
+        'status' => false,
         'message' => 'Invalid email format'
     ]);
     exit();
@@ -56,7 +51,7 @@ if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
 // Validate the contact number (10 to 15 digits)
 if (!preg_match('/^\d{10,15}$/', $contact_number)) {
     echo json_encode([
-        'status' => false, 
+        'status' => false,
         'message' => 'Invalid contact number. It should be 10 to 15 digits.'
     ]);
     exit();
@@ -66,7 +61,7 @@ if (!preg_match('/^\d{10,15}$/', $contact_number)) {
 $allowed_roles = ['User', 'Driver'];
 if (!in_array($role, $allowed_roles)) {
     echo json_encode([
-        'status' => false, 
+        'status' => false,
         'message' => 'Invalid role. Allowed roles are User and Driver.'
     ]);
     exit();
@@ -81,7 +76,7 @@ $stmt->store_result();
 
 if ($stmt->num_rows > 0) {
     echo json_encode([
-        'status' => false, 
+        'status' => false,
         'message' => 'Username or email already exists'
     ]);
     $stmt->close();
@@ -97,18 +92,8 @@ $image_path = $upload_dir . $image_name;
 // Check for errors during file upload
 if ($image['error'] != UPLOAD_ERR_OK) {
     echo json_encode([
-        'status' => false, 
+        'status' => false,
         'message' => 'Error uploading image'
-    ]);
-    exit();
-}
-
-// Validate image type (you can add more allowed types)
-$allowed_image_types = ['image/jpeg', 'image/png', 'image/gif'];
-if (!in_array($image['type'], $allowed_image_types)) {
-    echo json_encode([
-        'status' => false, 
-        'message' => 'Invalid image format. Allowed formats are JPEG, PNG, and GIF.'
     ]);
     exit();
 }
@@ -116,7 +101,7 @@ if (!in_array($image['type'], $allowed_image_types)) {
 // Move the uploaded image to the 'uploads' directory
 if (!move_uploaded_file($image['tmp_name'], $image_path)) {
     echo json_encode([
-        'status' => false, 
+        'status' => false,
         'message' => 'Failed to move uploaded image.'
     ]);
     exit();
@@ -129,12 +114,12 @@ $stmt->bind_param("sssssss", $name, $username, $email, $password, $role, $contac
 
 if ($stmt->execute()) {
     echo json_encode([
-        'status' => true, 
+        'status' => true,
         'message' => 'User registered successfully'
     ]);
 } else {
     echo json_encode([
-        'status' => false, 
+        'status' => false,
         'message' => 'Error registering user'
     ]);
 }
