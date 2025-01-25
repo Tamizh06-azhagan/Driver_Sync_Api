@@ -1,40 +1,58 @@
 <?php
-// Include database connection
-include('db.php');
 
-// Set the header for JSON response
-header('Content-Type: application/json');
+// Include the database connection file
+include 'db.php';
 
-// Check if required fields are provided
-if (isset($_POST['userid'], $_POST['car_name'], $_POST['image_path'], $_POST['condition'])) {
-    // Sanitize inputs
-    $userid = intval($_POST['userid']);
-    $car_name = htmlspecialchars(strip_tags($_POST['car_name']));
-    $image_path = htmlspecialchars(strip_tags($_POST['image_path']));
-    $condition = htmlspecialchars(strip_tags($_POST['condition']));
-
-    // Validate condition
-    $allowed_conditions = ['New', 'Used'];
-    if (!in_array($condition, $allowed_conditions)) {
-        echo json_encode(['status' => false, 'message' => 'Invalid condition (must be New or Used).']);
-        exit();
-    }
-
-    // Insert into the database
-    $query = "INSERT INTO cars (userid, car_name, image_path, condition) VALUES (?, ?, ?, ?)";
-    $stmt = $conn->prepare($query);
-    $stmt->bind_param("isss", $userid, $car_name, $image_path, $condition);
-
-    if ($stmt->execute()) {
-        echo json_encode(['status' => true, 'message' => 'Car added successfully.']);
-    } else {
-        echo json_encode(['status' => false, 'message' => 'Failed to add car.']);
-    }
-
+// Function to insert a car
+function insertCar($conn, $userid, $car_name, $image_path, $condition) {
+    // Check for duplicates
+    $checkQuery = "SELECT COUNT(*) FROM cars WHERE userid = ? AND car_name = ?";
+    $stmt = $conn->prepare($checkQuery);
+    $stmt->bind_param('is', $userid, $car_name);
+    $stmt->execute();
+    $stmt->bind_result($count);
+    $stmt->fetch();
     $stmt->close();
-} else {
-    echo json_encode(['status' => false, 'message' => 'Missing required fields.']);
+
+    if ($count > 0) {
+        return ['status' => false, 'message' => 'Duplicate car entry.'];
+    }
+
+    // Insert new car
+    $insertQuery = "INSERT INTO cars (userid, car_name, image_path, `condition`) VALUES (?, ?, ?, ?)";
+    $stmt = $conn->prepare($insertQuery);
+
+    try {
+        $stmt->bind_param('isss', $userid, $car_name, $image_path, $condition);
+        $stmt->execute();
+        $stmt->close();
+        return ['status' => true, 'message' => 'Car inserted successfully.'];
+    } catch (Exception $e) {
+        return ['status' => false, 'message' => 'Failed to insert car: ' . $e->getMessage()];
+    }
 }
 
-$conn->close();
+// Handle API request
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $data = json_decode(file_get_contents('php://input'), true);
+
+    if (isset($data['userid'], $data['car_name'], $data['image_path'], $data['condition'])) {
+        $response = insertCar(
+            $conn,
+            $data['userid'],
+            $data['car_name'],
+            $data['image_path'],
+            $data['condition']
+        );
+    } else {
+        $response = ['status' => false, 'message' => 'Invalid input data.'];
+    }
+
+    header('Content-Type: application/json');
+    echo json_encode($response);
+} else {
+    header('Content-Type: application/json');
+    echo json_encode(['status' => false, 'message' => 'Invalid request method.']);
+}
+
 ?>

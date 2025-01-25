@@ -85,9 +85,11 @@ $stmt = $conn->prepare($query);
 $stmt->bind_param("sssssss", $name, $username, $email, $password, $role, $contact_number, $image_path);
 
 if ($stmt->execute()) {
+    $inserted_id = $conn->insert_id; // Get the ID of the inserted record
     echo json_encode([
         'status' => true, 
-        'message' => 'User registered successfully'
+        'message' => 'User registered successfully',
+        'id' => $inserted_id
     ]);
 } else {
     echo json_encode([
