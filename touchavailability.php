@@ -26,8 +26,7 @@ $query = "
         s.id AS driver_id,
         s.name AS driver_name,
         s.email AS driver_email,
-        di.contact_number AS driver_contact,
-        di.vehicle_details AS driver_vehicle,
+        di.contactnumber AS driver_contact,
         ad.availability AS availability_status,
         ad.availability_date
     FROM 
@@ -35,7 +34,7 @@ $query = "
     INNER JOIN 
         signup AS s ON ad.userid = s.id
     INNER JOIN 
-        driverinfo AS di ON s.id = di.driver_id
+        driverinfo AS di ON s.id = di.userid
     WHERE 
         ad.availability_date = ?
         AND ad.availability = 'yes'
@@ -56,7 +55,6 @@ if ($result->num_rows > 0) {
             'driver_name' => $row['driver_name'],
             'driver_email' => $row['driver_email'],
             'driver_contact' => $row['driver_contact'],
-            'driver_vehicle' => $row['driver_vehicle'],
             'availability_status' => $row['availability_status'],
             'availability_date' => $row['availability_date']
         ];
