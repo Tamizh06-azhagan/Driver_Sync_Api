@@ -19,31 +19,49 @@ if ($userid <= 0) {
     exit();
 }
 
-// Query to fetch booking details for the user
+// Query to fetch booking details and driver's name for the user with status check
 $query = "
     SELECT 
         bd.id AS booking_id,
-        bd.drivername,
-        COALESCE(bd.status, 'pending') AS booking_status
+        bd.dateofbooking as date,
+        COALESCE(bd.status, 'Pending') AS booking_status,
+        s.name
     FROM 
         bookingdetails AS bd
+    JOIN 
+        signup AS s ON bd.driver_id = s.id
     WHERE 
         bd.userid = ?
 ";
 
 $stmt = $conn->prepare($query);
 $stmt->bind_param("i", $userid);
-$stmt->execute();
+
+// Execute the query and check for errors
+if (!$stmt->execute()) {
+    echo json_encode(['status' => false, 'message' => 'Database query failed.']);
+    exit();
+}
+
 $result = $stmt->get_result();
 
 // Check if any bookings are available
 if ($result->num_rows > 0) {
     $bookings = [];
     while ($row = $result->fetch_assoc()) {
+        // Ensure the status is one of the expected values: Accepted, Pending, Rejected
+        $status = $row['booking_status'];
+
+        // Update status if needed (for example, if there is a possibility of the value being stored differently in the database)
+        if (!in_array($status, ['Accepted', 'Pending', 'Rejected'])) {
+            $status = 'Pending'; // Default to Pending if the status is unrecognized
+        }
+
         $bookings[] = [
             'booking_id' => $row['booking_id'],
-            'drivername' => $row['drivername'],
-            'status' => $row['booking_status']
+            'date' => $row['date'],
+            'drivername' => $row['name'],  // Added the driver's name from the signup table
+            'status' => $status
         ];
     }
 
@@ -57,7 +75,8 @@ if ($result->num_rows > 0) {
     echo json_encode([
         'status' => false,
         'message' => 'No bookings found for the user.',
-        'userid' => $userid
+        'userid' => $userid,
+        'bookings' => []
     ]);
 }
 
