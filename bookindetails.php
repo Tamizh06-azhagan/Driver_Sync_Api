@@ -53,8 +53,8 @@ if ($result->num_rows > 0) {
         $status = $row['booking_status'];
 
         // Update status if needed (for example, if there is a possibility of the value being stored differently in the database)
-        if (!in_array($status, ['Accepted', 'Pending', 'Rejected'])) {
-            $status = 'Pending'; // Default to Pending if the status is unrecognized
+        if (!in_array($status, ['accepted', 'pending', 'rejected'])) {
+            $status = 'pending'; // Default to Pending if the status is unrecognized
         }
 
         $bookings[] = [
