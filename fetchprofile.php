@@ -13,7 +13,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     if (isset($_POST['id'])) {
         $id = intval($_POST['id']);
 
-        if ($stmt = $conn->prepare("SELECT name, username FROM signup WHERE id = ?")) {
+        if ($stmt = $conn->prepare("SELECT name, username,image_path FROM signup WHERE id = ?")) {
             $stmt->bind_param("i", $id);
             $stmt->execute();
             $result = $stmt->get_result();
