@@ -22,7 +22,7 @@ if ($driver_id <= 0) {
 // Query to fetch the driver's name and username from the signup table
 $query = "
     SELECT 
-        name, username
+        name, username,image_path
     FROM 
         signup
     WHERE 
@@ -48,7 +48,8 @@ if ($result->num_rows > 0) {
         'message' => 'Driver details retrieved successfully.',
         'driver' => [
             'name' => $row['name'],
-            'username' => $row['username']
+            'username' => $row['username'],
+            'image_path'=> $row['image_path']
         ]
     ]);
 } else {
